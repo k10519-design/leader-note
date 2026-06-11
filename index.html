@@ -56,10 +56,10 @@ html,body{height:100%;font-family:'Noto Sans KR',-apple-system,sans-serif;backgr
 .cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--text-3);padding:4px 0;}
 .cal-day{text-align:center;padding:8px 2px;border-radius:var(--radius-sm);font-size:14px;cursor:pointer;transition:all 0.12s;position:relative;}
 .cal-day:active{background:var(--surface2);}
-.cal-day.active{background:var(--primary);color:#fff;font-weight:600;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;margin:0 auto;}
+.cal-day.active{background:var(--primary);color:#fff !important;font-weight:600;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;margin:0 auto;}
 .cal-day.today{color:var(--primary);font-weight:600;}
 .cal-day.today::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--primary);}
-.cal-day.active.today::after{background:#fff;}
+.cal-day.active::after{display:none;}
 .cal-day.other-month{color:var(--text-3);}
 .cal-day.has-entry::before{content:'';position:absolute;top:2px;right:4px;width:4px;height:4px;border-radius:50%;background:var(--primary-mid);}
 .cal-day.active.has-entry::before{background:#fff;}
@@ -240,6 +240,7 @@ html,body{height:100%;font-family:'Noto Sans KR',-apple-system,sans-serif;backgr
     <div class="card">
       <div class="card-title">이 날의 기록 <span id="homeCount" style="font-size:11px;background:var(--primary-light);color:var(--primary);padding:2px 7px;border-radius:10px;font-weight:500;text-transform:none;letter-spacing:0"></span></div>
       <div id="homeEntries"></div>
+      <button class="btn-primary" style="margin-top:12px" onclick="goPageWithDate()">이 날 기록하기</button>
     </div>
   </div>
 </div>
@@ -247,6 +248,21 @@ html,body{height:100%;font-family:'Noto Sans KR',-apple-system,sans-serif;backgr
 <!-- RECORD -->
 <div class="page" id="pageRecord">
   <div class="page-inner">
+    <div class="card">
+      <div class="card-title">날짜</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="recordDateLabel" style="font-size:15px;font-weight:500;flex:1;"></span>
+        <button class="btn-sm" onclick="toggleRecordCal()">날짜 변경</button>
+      </div>
+      <div id="recordCalWrap" style="display:none;margin-top:12px;">
+        <div class="cal-header">
+          <button class="cal-nav" onclick="recCalMove(-1)">&#8249;</button>
+          <span class="cal-month" id="recCalMonth"></span>
+          <button class="cal-nav" onclick="recCalMove(1)">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="recCalGrid"></div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-title">대상자 선택</div>
       <div class="member-select-grid" id="memberSelectGrid"></div>
@@ -498,8 +514,58 @@ function selectDate(ds){
   renderCalendar();renderHomeEntries();
 }
 
-/* RECORD */
+function goPageWithDate(){goPage('record');}
+
+let recCalYear=new Date().getFullYear(), recCalMonth2=new Date().getMonth();
+function toggleRecordCal(){
+  const wrap=document.getElementById('recordCalWrap');
+  if(wrap.style.display==='none'){wrap.style.display='block';renderRecordCal();}
+  else wrap.style.display='none';
+}
+function recCalMove(dir){
+  recCalMonth2+=dir;
+  if(recCalMonth2>11){recCalMonth2=0;recCalYear++;}
+  if(recCalMonth2<0){recCalMonth2=11;recCalYear--;}
+  renderRecordCal();
+}
+function renderRecordCal(){
+  const todayStr2=todayStr();
+  document.getElementById('recCalMonth').textContent=`${recCalYear}년 ${recCalMonth2+1}월`;
+  const DOWS2=['일','월','화','수','목','금','토'];
+  const first=new Date(recCalYear,recCalMonth2,1).getDay();
+  const lastDay=new Date(recCalYear,recCalMonth2+1,0).getDate();
+  const prevLast=new Date(recCalYear,recCalMonth2,0).getDate();
+  let cells=DOWS2.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<first;i++){
+    const day=prevLast-first+1+i;
+    const d=new Date(recCalYear,recCalMonth2-1,day);
+    const ds=d.toLocaleDateString('ko-KR');
+    cells+=`<div class="cal-day other-month" onclick="selectRecordDate('${ds}')">${day}</div>`;
+  }
+  for(let d=1;d<=lastDay;d++){
+    const date=new Date(recCalYear,recCalMonth2,d);
+    const ds=date.toLocaleDateString('ko-KR');
+    const isToday=ds===todayStr2,isSel=ds===S.recordDate;
+    cells+=`<div class="cal-day${isSel?' active':''}${isToday?' today':''}" onclick="selectRecordDate('${ds}')">${d}</div>`;
+  }
+  const remaining=(7-((first+lastDay)%7))%7;
+  for(let i=1;i<=remaining;i++){
+    const d=new Date(recCalYear,recCalMonth2+1,i);
+    cells+=`<div class="cal-day other-month" onclick="selectRecordDate('${i}')">${i}</div>`;
+  }
+  document.getElementById('recCalGrid').innerHTML=cells;
+}
+function selectRecordDate(ds){
+  S.recordDate=ds;
+  document.getElementById('recordDateLabel').textContent=ds;
+  document.getElementById('recordCalWrap').style.display='none';
+  try{const parts=ds.split('. ');if(parts.length>=2){recCalYear=parseInt(parts[0]);recCalMonth2=parseInt(parts[1])-1;}}catch(e){}
+}
 function renderRecordPage(){
+  if(!S.recordDate)S.recordDate=S.selectedDate||todayStr();
+  document.getElementById('recordDateLabel').textContent=S.recordDate;
+  document.getElementById('recordCalWrap').style.display='none';
+  try{const parts=S.recordDate.split('. ');if(parts.length>=2){recCalYear=parseInt(parts[0]);recCalMonth2=parseInt(parts[1])-1;}}catch(e){}
   const grid=document.getElementById('memberSelectGrid');
   if(!S.members.length){
     grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;color:var(--text-3);font-size:13px;padding:1rem">설정에서 구성원을 먼저 추가해 주세요.</div>`;
@@ -539,10 +605,13 @@ function saveEntry(){
   const name=S.selectedMember;if(!name||!S.selectedTone)return;
   const text=document.getElementById('entryText').value.trim();if(!text)return;
   if(!S.entries[name])S.entries[name]=[];
-  S.entries[name].unshift({id:Date.now(),tag:S.selectedTag,tone:S.selectedTone,text,date:todayStr()});
+  const entryDate=S.recordDate||todayStr();
+  S.entries[name].unshift({id:Date.now(),tag:S.selectedTag,tone:S.selectedTone,text,date:entryDate});
   delete S.summaries[name];
   document.getElementById('entryText').value='';
   S.selectedTone=null;renderToneBtns();updateSaveBtn();
+  S.selectedDate=entryDate;
+  try{const parts=entryDate.split('. ');if(parts.length>=2){calYear=parseInt(parts[0]);calMonth=parseInt(parts[1])-1;}}catch(e){}
   saveS();toast('기록이 저장됐어요');goPage('home');
 }
 
