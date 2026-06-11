@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>관찰 기록 — 리더의 평가 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #F5F5F0;
+  --surface: #FFFFFF;
+  --surface2: #F0F0EB;
+  --border: #E2E2DA;
+  --border-md: #C8C8BF;
+  --primary: #4F46E5;
+  --primary-light: #EEF2FF;
+  --primary-mid: #818CF8;
+  --primary-dark: #3730A3;
+  --text: #1C1C1A;
+  --text-2: #5C5C58;
+  --text-3: #9C9C96;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.07);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: 'Noto Sans KR', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo-mark {
+  width: 34px; height: 34px;
+  background: var(--primary);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-mark svg { width: 18px; height: 18px; }
+.header-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.header-sub { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+.header-spacer { flex: 1; }
+
+/* ── PROVIDER BAR ── */
+.provider-section {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 2rem;
+}
+.provider-inner { max-width: 1060px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.provider-label { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+.chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border-md);
+  background: var(--surface);
+  color: var(--text-2);
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 5px;
+  font-family: inherit;
+}
+.chip:hover { border-color: var(--primary-mid); color: var(--primary); }
+.chip.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 500; }
+.chip.ollama-ok { border-color: #16A34A; color: #16A34A; }
+.chip.ollama-ok:hover { background: #F0FDF4; }
+.chip.ollama-ok.active { background: #16A34A; border-color: #16A34A; color: #fff; }
+.chip.disabled { opacity: 0.4; cursor: not-allowed; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: #16A34A; animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.provider-config { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-left: auto; }
+.provider-config input, .provider-config select {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+}
+.provider-config input { min-width: 220px; font-family: monospace; }
+.ollama-badge {
+  font-size: 11px; padding: 3px 9px; border-radius: 20px;
+  background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0;
+}
+.ollama-badge.err { background: #FFF1F2; color: #BE123C; border-color: #FECDD3; }
+.ollama-badge.checking { background: var(--surface2); color: var(--text-3); border-color: var(--border); }
+
+/* ── LAYOUT ── */
+.app-body { max-width: 1060px; margin: 0 auto; padding: 1.5rem 1.5rem; display: grid; grid-template-columns: 260px 1fr; gap: 1.25rem; align-items: start; }
+
+/* ── SIDEBAR ── */
+.sidebar { display: flex; flex-direction: column; gap: 10px; }
+.sidebar-head { font-size: 11px; font-weight: 600; color: var(--text-3); letter-spacing: 0.07em; text-transform: uppercase; padding: 0 4px; }
+.member-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow-card);
+}
+.member-card:hover { border-color: var(--primary-mid); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.1); }
+.member-card.active { border-color: var(--primary); background: var(--primary-light); }
+.member-avatar {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--primary-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; color: var(--primary);
+  flex-shrink: 0;
+}
+.member-card.active .member-avatar { background: var(--primary); color: #fff; }
+.member-info { flex: 1; min-width: 0; }
+.member-name { font-size: 14px; font-weight: 500; }
+.member-count { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.member-arc { flex-shrink: 0; }
+.add-member-box {
+  background: var(--surface);
+  border: 1.5px dashed var(--border-md);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex; gap: 8px; align-items: center;
+}
+.add-member-box input {
+  flex: 1; border: none; background: transparent; font-size: 13px;
+  color: var(--text); font-family: inherit; outline: none;
+}
+.add-member-box input::placeholder { color: var(--text-3); }
+.btn-add {
+  width: 28px; height: 28px; border-radius: 8px;
+  border: none; background: var(--primary); color: #fff;
+  font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.btn-add:hover { background: var(--primary-dark); }
+
+/* ── MAIN ── */
+.main-area { display: flex; flex-direction: column; gap: 14px; }
+.empty-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 4rem 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+.empty-icon { font-size: 40px; margin-bottom: 14px; }
+.empty-card h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+.empty-card p { font-size: 13px; color: var(--text-3); line-height: 1.6; }
+
+/* ── RECORD FORM ── */
+.record-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+.form-member-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 1.25rem; }
+.form-avatar {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 600; flex-shrink: 0;
+}
+.form-member-name { font-size: 16px; font-weight: 600; }
+.form-member-hint { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tag-pill {
+  padding: 5px 13px; border-radius: 20px; font-size: 12px;
+  cursor: pointer; border: 1px solid var(--border-md);
+  background: var(--surface2); color: var(--text-2);
+  transition: all 0.12s; font-family: inherit;
+}
+.tag-pill:hover { border-color: var(--primary-mid); }
+.tag-pill.selected { font-weight: 500; }
+.tag-pill[data-tag="업무성과"].selected { background: #EFF6FF; border-color: #3B82F6; color: #1D4ED8; }
+.tag-pill[data-tag="협업태도"].selected { background: #F5F3FF; border-color: #7C3AED; color: #5B21B6; }
+.tag-pill[data-tag="커뮤니케이션"].selected { background: #FFF7ED; border-color: #EA580C; color: #9A3412; }
+.tag-pill[data-tag="성장가능성"].selected { background: #F0FDF4; border-color: #16A34A; color: #15803D; }
+.tag-pill[data-tag="기타"].selected { background: var(--surface2); border-color: var(--border-md); color: var(--text-2); }
+.entry-textarea {
+  width: 100%; padding: 12px 14px;
+  font-size: 14px; line-height: 1.7;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-md);
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical; min-height: 96px;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.entry-textarea:focus { outline: none; border-color: var(--primary-mid); background: var(--surface); }
+.entry-textarea::placeholder { color: var(--text-3); }
+.form-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.form-hint { font-size: 11px; color: var(--text-3); }
+.btn-primary {
+  padding: 9px 20px; border-radius: var(--radius-md);
+  border: none; background: var(--primary); color: #fff;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+/* ── ENTRIES ── */
+.entries-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+.entries-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.entries-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.count-badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 20px;
+  background: var(--primary-light); color: var(--primary); font-weight: 500;
+}
+.btn-ai {
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--primary-mid); background: var(--primary-light);
+  color: var(--primary); font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.btn-ai:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.ai-menu {
+  display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+  padding: 12px; background: var(--primary-light);
+  border-radius: var(--radius-md); border: 1px solid #C7D2FE;
+}
+.ai-menu.open { display: flex; }
+.ai-menu-label { font-size: 11px; color: var(--primary-dark); width: 100%; margin-bottom: 4px; font-weight: 500; }
+.ai-opt {
+  padding: 6px 14px; border-radius: 20px; font-size: 12px;
+  border: 1px solid var(--primary-mid); background: var(--surface);
+  color: var(--primary); cursor: pointer; font-family: inherit;
+  transition: all 0.12s;
+}
+.ai-opt:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ── SUMMARY BOX ── */
+.summary-box {
+  background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 100%);
+  border: 1px solid #C7D2FE;
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.summary-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.summary-header h4 { font-size: 13px; font-weight: 600; color: var(--primary-dark); flex: 1; }
+.summary-provider { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: #C7D2FE; color: var(--primary-dark); }
+.summary-tabs { display: flex; gap: 5px; margin-bottom: 12px; }
+.stab {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px;
+  border: 1px solid #C7D2FE; background: var(--surface);
+  color: var(--primary); cursor: pointer; font-family: inherit;
+  transition: all 0.12s;
+}
+.stab.active { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+.summary-body { font-size: 13px; line-height: 1.8; color: #312E81; white-space: pre-wrap; }
+.loading-dots { display: inline-flex; gap: 4px; align-items: center; padding: 8px 0; }
+.loading-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--primary-mid); animation: pulse 1.2s ease-in-out infinite; }
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse { 0%,80%,100%{opacity:.25} 40%{opacity:1} }
+
+/* ── ENTRY ITEMS ── */
+.entry-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.entry-item:last-child { border-bottom: none; padding-bottom: 0; }
+.entry-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.entry-tag-badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 500; }
+.entry-tag-badge.업무성과 { background: #DBEAFE; color: #1D4ED8; }
+.entry-tag-badge.협업태도 { background: #EDE9FE; color: #5B21B6; }
+.entry-tag-badge.커뮤니케이션 { background: #FFEDD5; color: #9A3412; }
+.entry-tag-badge.성장가능성 { background: #DCFCE7; color: #15803D; }
+.entry-tag-badge.기타 { background: var(--surface2); color: var(--text-3); }
+.entry-date { font-size: 11px; color: var(--text-3); }
+.entry-text { font-size: 14px; line-height: 1.65; color: var(--text); }
+.entry-foot { display: flex; justify-content: flex-end; margin-top: 6px; }
+.btn-delete {
+  font-size: 11px; color: var(--text-3); background: none; border: none;
+  cursor: pointer; padding: 2px 8px; border-radius: 6px; font-family: inherit;
+}
+.btn-delete:hover { color: #BE123C; background: #FFF1F2; }
+
+/* ── DELETE MEMBER ── */
+.btn-ghost {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-3); padding: 4px; border-radius: 6px;
+  display: flex; align-items: center; margin-left: auto;
+}
+.btn-ghost:hover { color: #BE123C; background: #FFF1F2; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1C1C1A; color: #fff; padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 999;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .app-body { grid-template-columns: 1fr; padding: 1rem; }
+  .provider-inner { flex-direction: column; align-items: flex-start; }
+  .provider-config { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="logo-mark">
+    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 5h12M4 10h8M4 15h10" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="16" cy="14" r="3.5" fill="#818CF8" stroke="#fff" stroke-width="1.2"/>
+      <path d="M15 14l.8.8 1.4-1.6" stroke="#fff" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div>
+    <div class="header-title">관찰 기록</div>
+    <div class="header-sub">리더의 평가 노트</div>
+  </div>
+</header>
+
+<!-- PROVIDER BAR -->
+<div class="provider-section">
+  <div class="provider-inner">
+    <span class="provider-label">AI 연동</span>
+    <div class="chip-group" id="providerChips"></div>
+    <span id="ollamaStatus" class="ollama-badge checking">Ollama 확인 중...</span>
+    <div class="provider-config" id="providerConfig"></div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="app-body">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-head">구성원</div>
+    <div id="memberList"></div>
+    <div class="add-member-box">
+      <input type="text" id="newMemberInput" placeholder="이름을 입력하고 Enter" maxlength="20" />
+      <button class="btn-add" onclick="addMember()" title="추가">+</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-area" id="mainArea">
+    <div class="empty-card">
+      <div class="empty-icon">📋</div>
+      <h3>구성원을 선택하거나 추가해 주세요</h3>
+      <p>왼쪽에서 이름을 입력하면<br>바로 기록을 시작할 수 있어요.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const CATEGORIES = ['업무성과','협업태도','커뮤니케이션','성장가능성','기타'];
+const PROVIDERS = [
+  { id:'anthropic', label:'Claude',   requiresKey:true,  placeholder:'sk-ant-...',  models:['claude-sonnet-4-20250514','claude-opus-4-20250514','claude-haiku-4-5-20251001'] },
+  { id:'openai',    label:'ChatGPT',  requiresKey:true,  placeholder:'sk-...',       models:['gpt-4o','gpt-4o-mini','gpt-4-turbo'] },
+  { id:'gemini',    label:'Gemini',   requiresKey:true,  placeholder:'AIza...',      models:['gemini-1.5-pro','gemini-1.5-flash','gemini-2.0-flash'] },
+  { id:'ollama',    label:'Ollama',   requiresKey:false, placeholder:'',            models:[] },
+];
+
+let S = { members:[], entries:{}, selectedMember:null, selectedTag:'업무성과', summaries:{} };
+let P = { selected:'anthropic', keys:{}, models:{}, ollamaAvailable:false, ollamaModels:[] };
+
+/* ── PERSIST ── */
+function loadState() {
+  try { const d = localStorage.getItem('obs_v3'); if(d) S = {...S, ...JSON.parse(d)}; } catch(e){}
+  try { const d = localStorage.getItem('obs_prov_v3'); if(d) P = {...P, ...JSON.parse(d)}; } catch(e){}
+  if(!S.summaries) S.summaries = {};
+}
+function saveS() { localStorage.setItem('obs_v3', JSON.stringify(S)); }
+function saveP() { localStorage.setItem('obs_prov_v3', JSON.stringify(P)); }
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ── OLLAMA CHECK ── */
+async function checkOllama() {
+  const badge = document.getElementById('ollamaStatus');
+  try {
+    const res = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2500) });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    P.ollamaAvailable = true;
+    P.ollamaModels = (data.models||[]).map(m=>m.name);
+    if (!P.ollamaModels.length) P.ollamaModels = ['llama3','mistral'];
+    badge.textContent = '로컬 연결됨';
+    badge.className = 'ollama-badge';
+  } catch {
+    P.ollamaAvailable = false;
+    badge.textContent = 'Ollama 미감지';
+    badge.className = 'ollama-badge err';
+  }
+  renderProviderBar();
+}
+
+/* ── PROVIDER ── */
+function selectProvider(id) {
+  if (id==='ollama' && !P.ollamaAvailable) return;
+  P.selected = id; saveP(); renderProviderBar();
+}
+function setKey(pid, val) { P.keys[pid]=val; saveP(); }
+function setModel(pid, val) { P.models[pid]=val; saveP(); }
+
+function renderProviderBar() {
+  const chips = document.getElementById('providerChips');
+  chips.innerHTML = PROVIDERS.map(p => {
+    const isOllama = p.id==='ollama';
+    const unavail = isOllama && !P.ollamaAvailable;
+    const avail = isOllama && P.ollamaAvailable;
+    const active = P.selected===p.id;
+    let cls = 'chip';
+    if (active) cls += ' active';
+    else if (avail) cls += ' ollama-ok';
+    else if (unavail) cls += ' disabled';
+    const dot = avail ? '<span class="live-dot"></span>' : '';
+    return `<button class="${cls}" onclick="selectProvider('${p.id}')">${dot}${p.label}</button>`;
+  }).join('');
+
+  const cfg = document.getElementById('providerConfig');
+  const p = PROVIDERS.find(x=>x.id===P.selected);
+  if (!p) { cfg.innerHTML=''; return; }
+  const models = p.id==='ollama' ? P.ollamaModels : p.models;
+  const curModel = P.models[p.id] || models[0] || '';
+  const modelSel = models.length
+    ? `<select onchange="setModel('${p.id}',this.value)">${models.map(m=>`<option value="${m}" ${m===curModel?'selected':''}>${m}</option>`).join('')}</select>`
+    : '';
+  if (p.requiresKey) {
+    cfg.innerHTML = `<input type="password" placeholder="${p.placeholder}" value="${P.keys[p.id]||''}" oninput="setKey('${p.id}',this.value)" />${modelSel}`;
+  } else {
+    cfg.innerHTML = modelSel || `<span style="font-size:12px;color:#6B7280">localhost:11434 · 키 불필요</span>`;
+  }
+}
+
+/* ── MEMBERS ── */
+function addMember() {
+  const inp = document.getElementById('newMemberInput');
+  const name = inp.value.trim();
+  if (!name || S.members.includes(name)) { inp.focus(); return; }
+  S.members.push(name);
+  if (!S.entries[name]) S.entries[name] = [];
+  inp.value = '';
+  saveS(); renderSidebar();
+  selectMember(name);
+  showToast(`${name} 님이 추가됐어요`);
+}
+
+function deleteMember(name) {
+  if (!confirm(`'${name}' 구성원과 모든 기록을 삭제할까요?`)) return;
+  S.members = S.members.filter(m=>m!==name);
+  delete S.entries[name]; delete S.summaries[name];
+  if (S.selectedMember===name) S.selectedMember=null;
+  saveS(); render();
+  showToast(`${name} 님의 기록이 삭제됐어요`);
+}
+
+function selectMember(name) { S.selectedMember=name; render(); }
+
+function initials(name) { return name.slice(0,2); }
+
+/* ── MINI ARC SVG ── */
+function miniArc(entries) {
+  const counts = {};
+  CATEGORIES.forEach(c=>counts[c]=0);
+  entries.forEach(e=>{ if(counts[e.tag]!==undefined) counts[e.tag]++; });
+  const total = entries.length || 1;
+  const colors = { '업무성과':'#3B82F6','협업태도':'#7C3AED','커뮤니케이션':'#EA580C','성장가능성':'#16A34A','기타':'#9CA3AF' };
+  const r=12, cx=14, cy=14, stroke=4;
+  const circ = 2*Math.PI*r;
+  let offset=0;
+  let paths='';
+  CATEGORIES.forEach(cat=>{
+    const pct=counts[cat]/total;
+    const len=pct*circ;
+    if(len<0.5) return;
+    paths+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[cat]}" stroke-width="${stroke}" stroke-dasharray="${len} ${circ}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" opacity="0.85"/>`;
+    offset+=len;
+  });
+  return `<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="none" stroke="#E5E7EB" stroke-width="4"/>${paths}</svg>`;
+}
+
+/* ── ENTRIES ── */
+function addEntry() {
+  const name = S.selectedMember;
+  const text = document.getElementById('entryText').value.trim();
+  if (!text) { document.getElementById('entryText').focus(); return; }
+  S.entries[name].unshift({ id:Date.now(), tag:S.selectedTag, text, date:new Date().toLocaleDateString('ko-KR') });
+  delete S.summaries[name];
+  document.getElementById('entryText').value='';
+  saveS(); renderMain();
+  showToast('기록이 저장됐어요');
+}
+
+function deleteEntry(name, id) {
+  S.entries[name] = S.entries[name].filter(e=>e.id!==id);
+  delete S.summaries[name];
+  saveS(); renderMain();
+}
+
+function selectTag(tag) {
+  S.selectedTag=tag;
+  document.querySelectorAll('.tag-pill').forEach(t=>t.classList.toggle('selected', t.dataset.tag===tag));
+}
+
+/* ── AI CALL ── */
+async function callAPI(prompt) {
+  const pid=P.selected;
+  const prov=PROVIDERS.find(x=>x.id===pid);
+  const model=P.models[pid]||(pid==='ollama'?P.ollamaModels[0]:prov.models[0]);
+
+  if (pid==='anthropic') {
+    const key=P.keys.anthropic||'';
+    if(!key) throw new Error('Claude API 키를 먼저 입력해 주세요.');
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const d=await res.json();
+    if(!d.content) throw new Error(d.error?.message||'API 오류');
+    return d.content[0].text;
+  }
+  if (pid==='openai') {
+    const key=P.keys.openai||'';
+    if(!key) throw new Error('OpenAI API 키를 먼저 입력해 주세요.');
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},body:JSON.stringify({model,max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const d=await res.json();
+    if(!d.choices) throw new Error(d.error?.message||'API 오류');
+    return d.choices[0].message.content;
+  }
+  if (pid==='gemini') {
+    const key=P.keys.gemini||'';
+    if(!key) throw new Error('Gemini API 키를 먼저 입력해 주세요.');
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+    const d=await res.json();
+    if(!d.candidates) throw new Error(d.error?.message||'API 오류');
+    return d.candidates[0].content.parts[0].text;
+  }
+  if (pid==='ollama') {
+    const res=await fetch('http://localhost:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,stream:false,messages:[{role:'user',content:prompt}]})});
+    const d=await res.json();
+    if(!d.message) throw new Error('Ollama 응답 오류');
+    return d.message.content;
+  }
+  throw new Error('알 수 없는 제공사');
+}
+
+async function generateSummary(type) {
+  const name=S.selectedMember;
+  const entries=S.entries[name];
+  if(!entries||!entries.length) return;
+  const sc=document.getElementById('summaryBody');
+  if(sc) sc.innerHTML='<div class="loading-dots"><span></span><span></span><span></span></div>';
+  const txt=entries.map(e=>`[${e.tag}] ${e.date}: ${e.text}`).join('\n');
+  const prompts={
+    memo:`아래는 '${name}'에 대한 리더의 관찰 기록입니다.\n\n${txt}\n\n이 기록을 바탕으로 평가 시즌에 참고할 수 있는 간결한 메모를 작성해 주세요. 카테고리별로 핵심만 정리하고, 2~3문장 이내로 마무리해 주세요.`,
+    feedback:`아래는 '${name}'에 대한 리더의 관찰 기록입니다.\n\n${txt}\n\n이 기록을 바탕으로 면담 전 전달할 수 있는 건설적인 피드백 초안을 작성해 주세요. 강점과 개선 포인트를 균형 있게 담아주세요.`,
+    evidence:`아래는 '${name}'에 대한 리더의 관찰 기록입니다.\n\n${txt}\n\n이 기록을 평가 점수 산정의 근거 자료로 활용할 수 있도록 구조화해 주세요. 카테고리별 핵심 사례를 bullet로 정리해 주세요.`
+  };
+  try {
+    const result=await callAPI(prompts[type]);
+    if(!S.summaries[name]) S.summaries[name]={};
+    S.summaries[name][type]=result;
+    S.summaries[name].activeTab=type;
+    saveS(); renderMain();
+    showToast('AI 요약이 완성됐어요');
+  } catch(e) {
+    if(sc) sc.textContent='오류: '+e.message;
+    showToast('요약 중 오류가 발생했어요');
+  }
+}
+
+function switchTab(tab) {
+  if(!S.summaries[S.selectedMember]) S.summaries[S.selectedMember]={};
+  S.summaries[S.selectedMember].activeTab=tab;
+  renderMain();
+}
+
+function toggleAiMenu() {
+  document.getElementById('aiMenu').classList.toggle('open');
+}
+
+/* ── RENDER SIDEBAR ── */
+function renderSidebar() {
+  const el=document.getElementById('memberList');
+  el.innerHTML=S.members.map(name=>{
+    const entries=S.entries[name]||[];
+    const active=S.selectedMember===name;
+    const countLabel=entries.length===0?'아직 기록 없음':`기록 ${entries.length}건`;
+    return `<div class="member-card ${active?'active':''}" onclick="selectMember('${name}')">
+      <div class="member-avatar">${initials(name)}</div>
+      <div class="member-info">
+        <div class="member-name">${name}</div>
+        <div class="member-count">${countLabel}</div>
+      </div>
+      <div class="member-arc">${miniArc(entries)}</div>
+    </div>`;
+  }).join('');
+  const inp=document.getElementById('newMemberInput');
+  inp.onkeydown=e=>{ if(e.key==='Enter') addMember(); };
+}
+
+/* ── RENDER MAIN ── */
+function renderMain() {
+  const area=document.getElementById('mainArea');
+  const name=S.selectedMember;
+  if(!name) {
+    area.innerHTML=`<div class="empty-card"><div class="empty-icon">📋</div><h3>구성원을 선택하거나 추가해 주세요</h3><p>왼쪽에서 이름을 입력하면<br>바로 기록을 시작할 수 있어요.</p></div>`;
+    return;
+  }
+  const entries=S.entries[name]||[];
+  const sum=S.summaries[name]||{};
+  const activeTab=sum.activeTab||'memo';
+  const tagsHtml=CATEGORIES.map(t=>`<button class="tag-pill ${S.selectedTag===t?'selected':''}" data-tag="${t}" onclick="selectTag('${t}')">${t}</button>`).join('');
+  const tabs=[{k:'memo',l:'평가 메모'},{k:'feedback',l:'피드백 초안'},{k:'evidence',l:'근거 자료'}];
+  const hasSummary=sum.memo||sum.feedback||sum.evidence;
+  const provLabel=PROVIDERS.find(p=>p.id===P.selected)?.label||'';
+
+  const summaryHtml=hasSummary?`<div class="summary-box">
+    <div class="summary-header">
+      <h4>✨ AI 요약</h4>
+      <span class="summary-provider">${provLabel}</span>
+    </div>
+    <div class="summary-tabs">${tabs.map(t=>`<button class="stab ${activeTab===t.k?'active':''}" onclick="switchTab('${t.k}')">${t.l}</button>`).join('')}</div>
+    <div class="summary-body" id="summaryBody">${(sum[activeTab]||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+  </div>`:'';
+
+  const entriesHtml=entries.length===0
+    ?`<p style="text-align:center;color:#9CA3AF;font-size:13px;padding:1.5rem 0">아직 기록이 없어요. 위에서 첫 번째 기록을 남겨보세요 :)</p>`
+    :entries.map(e=>`<div class="entry-item">
+      <div class="entry-meta">
+        <span class="entry-tag-badge ${e.tag}">${e.tag}</span>
+        <span class="entry-date">${e.date}</span>
+      </div>
+      <div class="entry-text">${e.text.replace(/</g,'&lt;')}</div>
+      <div class="entry-foot"><button class="btn-delete" onclick="deleteEntry('${name}',${e.id})">삭제</button></div>
+    </div>`).join('');
+
+  area.innerHTML=`
+    <div class="record-form">
+      <div class="form-member-bar">
+        <div class="form-avatar">${initials(name)}</div>
+        <div>
+          <div class="form-member-name">${name}</div>
+          <div class="form-member-hint">오늘 관찰한 내용을 기록해 두세요</div>
+        </div>
+        <button class="btn-ghost" onclick="deleteMember('${name}')" title="${name} 삭제">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+      <div class="tag-row">${tagsHtml}</div>
+      <textarea class="entry-textarea" id="entryText" placeholder="어떤 점이 눈에 띄었나요? 구체적일수록 평가 때 도움이 돼요." onkeydown="if(event.ctrlKey&&event.key==='Enter')addEntry()"></textarea>
+      <div class="form-footer">
+        <span class="form-hint">Ctrl + Enter로 빠르게 저장</span>
+        <button class="btn-primary" onclick="addEntry()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          기록 저장
+        </button>
+      </div>
+    </div>
+
+    <div class="entries-card">
+      ${summaryHtml}
+      <div class="entries-header">
+        <div class="entries-title">
+          기록 목록
+          <span class="count-badge">${entries.length}건</span>
+        </div>
+        ${entries.length>0?`<button class="btn-ai" onclick="toggleAiMenu()">✨ AI로 요약하기</button>`:''}
+      </div>
+      <div class="ai-menu" id="aiMenu">
+        <div class="ai-menu-label">어떤 형태로 요약할까요?</div>
+        ${tabs.map(t=>`<button class="ai-opt" onclick="generateSummary('${t.k}');document.getElementById('aiMenu').classList.remove('open')">${t.l}</button>`).join('')}
+      </div>
+      ${entriesHtml}
+    </div>`;
+
+  renderSidebar();
+}
+
+function render() { renderProviderBar(); renderSidebar(); renderMain(); }
+
+loadState();
+checkOllama();
+render();
+</script>
+</body>
+</html>
